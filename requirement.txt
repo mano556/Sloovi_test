@@ -1,0 +1,4 @@
+1.Flask (latest version)
+2.jwt (latest version)
+3.werkzeug (lastest version)
+4.Mongo atlasa account for db connection
