@@ -8,7 +8,7 @@ from functools import wraps
 
 app=Flask(__name__)
 app.config['SECRET_KEY'] = "##10##"
-database_name="person_db"
+database_name="test"
 # Mongo atlas linking
 DB_URI="mongodb+srv://test:Test123@cluster0.quohhhr.mongodb.net/?retryWrites=true&w=majority"
 
@@ -30,9 +30,8 @@ class template(db.Document):
     template_name=db.StringField()
     subject=db.StringField()
     body=db.StringField()
-
+# convert this  to json
     def to_json(self):
-        # convert this  to json
         return{
         "template_id":self.template_id,
         "template_name":self.template_name,
@@ -44,7 +43,7 @@ class template(db.Document):
 def token_required(f):
     @wraps(f)
     def decorated(*args,**kwargs):
-        token=None
+        token=request.args.get("token")
 
         if 'x-access-token' in request.headers:
             token=request.headers['x-access-token']
@@ -89,27 +88,18 @@ def login():
 
 
 # create new template route
-@app.route("/person_db/new_template",methods=["POST"])
-@token_required
-def create_new_template(current_user):
-    if not current_user:
-        return jsonify({'message' : 'Cannot perform that function!'})
-    
+@app.route("/template",methods=["POST"])
+def create_new_template():
     if request.method=="POST":
         content=request.json
-        template1=template( 
-        template_id=content['template_id'],
-        template_name=content['template_name'],
-        subject=content['subject'],
-        body=content['body'],
-        
-    )
+    template1=template( template_id=content['template_id'],template_name=content['template_name'],subject=content['subject'],body=content['body'])
     template1.save()
-    return make_response("",201)
+    return make_response("new template is created",201)
 
 
 # Get all template route
-@app.route("/person_db/template",methods=["GET"])
+@app.route("/template",methods=["GET"])
+# @token_required
 def get_all_template():  
     if request.method=="GET":
         templateData=[]
@@ -118,42 +108,37 @@ def get_all_template():
         return make_response(jsonify(templateData),200)
     
 # Get specific template route
-@app.route("/person_db/template/<template_id>",methods=["GET"])
-@token_required
-def get_specific_template(current_user,template_id):
-    if not current_user:
-        return jsonify({'message' : 'Cannot perform that function!'})
+@app.route("/template/<template_id>",methods=["GET"])
+# @token_required
+def get_specific_template(template_id):
     if request.method=="GET":  
-            template_obj=template.objects(id=template_id,template_id=current_user.id).first()
-            if template_obj:
-                return make_response(jsonify(template_obj.to_json()),200)
-            else:
-                return make_response("",404)
+        template_obj=template.objects(template_id=template_id).first()
+        if template_obj:
+            return make_response(jsonify(template_obj.to_json()),200)
+        else:
+            return make_response("",404)
 #Update template route
-@app.route("/person_db/template/<template_id>",methods=["PUT"])
-@token_required
-def Update_specific_template(current_user,template_id):
-    if not current_user:
-        return jsonify({'message' : 'Cannot perform that function!'})
+@app.route("/template/<template_id>",methods=["PUT"])
+# @token_required
+def Update_specific_template(template_id):
+    
     if request.method=="PUT":  
         content=request.json
-        template_obj=template.objects(id=template_id,template_id=current_user.id).first()
+        template_obj=template.objects(template_id=template_id).first()
         template_obj.update( 
         template_name=content['template_name'],
         subject=content['subject'],
         body=content['body'])
         return make_response("",204)
 #Delete template route
-@app.route("/person_db/template/<template_id>",methods=["DELETE"])
-@token_required
-def delete_specific_template(current_user,template_id):
-    if not current_user:
-        return jsonify({'message' : 'Cannot perform that function!'})
+@app.route("/template/<template_id>",methods=["DELETE"])
+# @token_required
+def delete_specific_template(template_id):
     if request.method=="DELETE":
-        template_obj=template.objects(id=template_id,template_id=current_user.id).first()
+        template_obj=template.objects(template_id=template_id).first()
         template_obj.delete()
         return make_response("",204)
 
 
 if __name__ == "__main__":
-    app.run(debug=True,host='0.0.0.0')
+    app.run(debug=True)
